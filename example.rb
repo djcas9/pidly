@@ -19,9 +19,7 @@ class Test < Pidly::Control
   
   
   def start!
-    
-    count = 0
-    
+
     20.times do |i|
       
       puts "#{i}: #{Time.now} hello!"
