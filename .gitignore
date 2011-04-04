@@ -1,2 +1,12 @@
 doc/
 pkg/
+.DS_Store
+*.tmproj
+tmtags
+*.swp
+coverage
+rdoc
+doc
+.yardoc
+.bundle/
+.document
