@@ -5,8 +5,6 @@ require 'pp'
 
 class Test < Pidly::Control
   
-  include DaemonCommands
-  
   before_start :test_pidly_on_start
   
   start :start!
