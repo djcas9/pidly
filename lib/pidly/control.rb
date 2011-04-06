@@ -25,7 +25,7 @@ module Pidly
     def initialize(options={})
 
       @name = options[:name]
-      
+
       @messages = []
 
       if options[:path]
@@ -126,12 +126,12 @@ module Pidly
         rescue RuntimeError => message
           STDERR.puts message
           STDERR.puts message.backtrace
-          
+
           execute_callbacks(:error)
         rescue => message
           STDERR.puts message
           STDERR.puts message.backtrace
-          
+
           execute_callbacks(:error)
         end
       end
@@ -147,11 +147,10 @@ module Pidly
       if running?
 
         Process.kill(@signal, @pid)
-
         FileUtils.rm(@pid_file)
-
+        
         execute_callbacks(:stop)
-
+        
         begin
           Process.waitpid(@pid)
         rescue Errno::ECHILD
@@ -173,7 +172,7 @@ module Pidly
 
     rescue Errno::ENOENT
     end
-    
+
     def status
       if running?
         say :info, "#{@name} is running (PID #{@pid})"
@@ -185,10 +184,15 @@ module Pidly
     def restart
       stop; sleep 1 while running?; start
     end
-    
+
     def kill
-      say :info, "Killing #{@name} (PID #{@pid})"
-      Process.kill 9, @pid if running?
+      if running?
+        say :info, "Killing #{@name} (PID #{@pid})"
+        Process.kill 9, @pid
+      end
+      
+      FileUtils.rm(@pid_file)
+    rescue Errno::ENOENT
     end
 
     def running?
@@ -223,7 +227,7 @@ module Pidly
 
     def execute_callbacks(callback_name)
       @error_count += 1 if callback_name == :error
-      
+
       if Control.class_variable_defined?(:"@@#{callback_name}")
         callback = Control.class_variable_get(:"@@#{callback_name}")
 

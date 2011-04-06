@@ -3,24 +3,29 @@ require 'pidly'
 
 describe Control do
 
-  before do
+  before(:all) do
     @daemon = Test.spawn(
       :name => 'YAY Daemon',
       :path => '/tmp',
-      :verbose => false
+      :verbose => true
     )
-
+    @daemon.kill if @daemon.running?
     @daemon.start
-  end
-
-  after do
-    @daemon.kill
-    # FileUtils.rm @daemon.log_path.to_s
-    # FileUtils.rm @daemon.pid_path.to_s
+    sleep 1
   end
 
   it "should have successfully started both pidly daemons" do
-    @daemon.messages.first.should == "blah"
+    @daemon.status
+    reply = "#{@daemon.name} is running (PID #{@daemon.pid})"
+    @daemon.messages.last.should == reply
+  end
+  
+  
+  
+  after(:all) do
+    @daemon.kill if @daemon
+    # FileUtils.rm @daemon.log_path.to_s
+    # FileUtils.rm @daemon.pid_path.to_s
   end
 
 end
