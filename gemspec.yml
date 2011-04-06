@@ -1,9 +1,11 @@
 name: pidly
-summary: "TODO: Summary"
-description: "TODO: Description"
+summary: "A super simple daemon library."
+description: 
+ "Pidly is a very minimalistic daemon library that doesnt make assumptions. Pidly allows you to control the
+  daemon without getting in the way with forced verbose output and usage messages."
 license: MIT
-authors: dustinwebber
-homepage: http://rubygems.org/gems/pidly
+authors: Dustin Willis Webber
+homepage: https://github.com/mephux/pidly
 has_yard: true
 
 development_dependencies:

@@ -185,6 +185,11 @@ module Pidly
     def restart
       stop; sleep 1 while running?; start
     end
+    
+    def kill
+      say :info, "Killing #{@name} (PID #{@pid})"
+      Process.kill 9, pid if running?
+    end
 
     def running?
       Process.kill 0, @pid
