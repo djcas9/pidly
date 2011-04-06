@@ -23,7 +23,7 @@ class Test < Pidly::Control
 
   def when_daemon_starts
     loop do
-      puts "TEST FROM #{@pid}"
+      puts "#{Time.now} TEST FROM #{@pid}"
       sleep 2
     end
   end

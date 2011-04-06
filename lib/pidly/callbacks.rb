@@ -4,60 +4,36 @@ module Pidly
   # 
   module Callbacks
 
-    #
-    # All available callback methods
-    # 
-    AVAILABLE_CALLBACKS = [
-      :before_start,
-      :start,
-      :stop,
-      :after_stop,
-      :error
-    ]
+    def before_start(*callbacks)
+      add_callback(:before_start, callbacks)
+    end
+    
+    def start(*callbacks)
+      add_callback(:start, callbacks)
+    end
+    
+    def stop(*callbacks)
+      add_callback(:stop, callbacks)
+    end
+    
+    def after_stop(*callbacks)
+      add_callback(:after_stop, callbacks)
+    end
+    
+    def error(*callbacks)
+      add_callback(:error, callbacks)
+    end
+
+    def add_callback(callback, methods)
+      Control.class_variable_set(:"@@#{callback}", methods)
+    end
 
     #
     # Extend and include callback methods
     # 
     def self.included(receiver)
-      receiver.extend         CallbackMethods
-      receiver.send :include, CallbackMethods
+      receiver.extend self
     end
-
-    #
-    # Callback methods
-    # 
-    module CallbackMethods
-      
-      #
-      # Define callbacks
-      # 
-      # Define callbacks and create
-      # class varabiles holding method calls
-      # for the given callback location
-      # 
-      def self.define_callbacks
-        Callbacks::AVAILABLE_CALLBACKS.each do |method_name|  
-          instance_eval do
-            
-            define_method method_name do |*call_methods|
-              Control.class_variable_set(:"@@#{method_name}", [])
-
-              call_methods.each do |method|
-                next unless method
-                Control.class_variable_get(:"@@#{method_name}") << method
-              end
-            end
-
-          end
-        end
-      end
-
-      # 
-      # Define callbacks
-      # 
-      define_callbacks
-      
-    end # module CallbackMethods
 
   end # modle Callbacks
   

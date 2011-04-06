@@ -2,31 +2,26 @@ module Pidly
 
   module Logger
 
-    module LoggerMethods
+    attr_accessor :verbosity
 
-      attr_accessor :verbosity
+    def verbose?
+      @verbosity
+    end
 
-      def verbose?
-        @verbosity
+    def say(type, message)
+      case type.to_sym
+      when :info
+        msg = message
+      when :error
+        msg = message
       end
 
-      def say(type, message)
-        case type.to_sym
-        when :info
-          msg = message
-        when :error
-          msg = message
-        end
-
-        @messages << msg
-        puts msg if verbose?
-      end
-
-    end # module LoggerMethods
+      @messages << msg
+      puts msg if verbose?
+    end
 
     def self.included(receiver)
-      receiver.extend         LoggerMethods
-      receiver.send :include, LoggerMethods
+      receiver.extend self
     end
 
   end # class Logger

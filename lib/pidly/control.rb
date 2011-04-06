@@ -5,6 +5,7 @@ require 'pidly/callbacks'
 require 'pidly/logger'
 
 module Pidly
+  
   #
   # Pidly Master Control
   #
@@ -17,7 +18,7 @@ module Pidly
     attr_accessor :daemon, :name, :pid_path,
       :log_path, :path, :sync_log, :allow_multiple,
       :verbose, :pid, :timeout, :error_count, :messages
-
+      
     #
     # Initialize Control Object
     #
@@ -28,8 +29,8 @@ module Pidly
 
       @messages = []
 
-      if options[:path]
-        @path = Pathname.new(options[:path])
+      if options.has_key?(:path)
+        @path = Pathname.new(options.fetch(:path))
       else
         @path = Pathname.new('/tmp')
       end
@@ -42,14 +43,14 @@ module Pidly
         raise('Path must be readable and writable.')
       end
 
-      if options[:pid_file]
-        @pid_file = options[:pid_path]
+      if options.has_key?(:pid_file)
+        @pid_file = options.fetch(:pid_path)
       else
         @pid_file = File.join(@path.to_s, 'pids', @name + '.pid')
       end
 
-      if options[:log_file]
-        @log_file = options[:log_path]
+      if options.has_key?(:log_file)
+        @log_file = options.fetch(:log_path)
       else
         @log_file = File.join(@path.to_s, 'logs', @name + '.log')
       end
@@ -58,17 +59,17 @@ module Pidly
         @pid = fetch_pid
       end
 
-      @sync_log = options[:sync_log] || true
+      @sync_log = options.fetch(:sync_log, true)
 
-      @allow_multiple = options[:allow_multiple] || false
+      @allow_multiple = options.fetch(:allow_multiple, false)
 
-      @signal = options[:signal] || "TERM"
+      @signal = options.fetch(:signal, "TERM")
 
-      @timeout = options[:timeout] || 10
+      @timeout = options.fetch(:timeout, 10)
 
       @error_count = 0
 
-      @verbosity = options[:verbose] || false
+      @verbosity = options.fetch(:verbose, false)
     end
 
     #
@@ -91,14 +92,13 @@ module Pidly
         if running?
           say :error, "An instance of #{@name} is already " +
             "running (PID #{@pid})"
-          exit 0
+          exit 1
         end
       end
-
-      fork do
+      
+      @pid = fork do
         begin
           Process.setsid
-          exit if fork
 
           open(@pid_file, 'w') do |f|
             f << Process.pid
@@ -152,7 +152,7 @@ module Pidly
         execute_callbacks(:stop)
         
         begin
-          Process.waitpid(@pid)
+          Process.wait(@pid)
         rescue Errno::ECHILD
         end
 
@@ -162,7 +162,6 @@ module Pidly
         end
 
         Process.kill 9, @pid if running?
-
         execute_callbacks(:after_stop)
 
       else
