@@ -162,7 +162,7 @@ module Pidly
           exit unless running?
         end
 
-        Process.kill 9, pid if running?
+        Process.kill 9, @pid if running?
 
         execute_callbacks(:after_stop)
 
@@ -188,7 +188,7 @@ module Pidly
     
     def kill
       say :info, "Killing #{@name} (PID #{@pid})"
-      Process.kill 9, pid if running?
+      Process.kill 9, @pid if running?
     end
 
     def running?
