@@ -4,21 +4,22 @@ module Pidly
 
     module LoggerMethods
 
-      def verbosity(verbosity=true)
-        verbosity
-      end
+      attr_accessor :verbosity
 
       def verbose?
-        verbosity
+        @verbosity
       end
 
       def say(type, message)
         case type.to_sym
         when :info
-          puts message if verbose?
+          msg = message
         when :error
-          puts message
+          msg = message
         end
+
+        @messages << msg
+        puts msg if verbose?
       end
 
     end # module LoggerMethods

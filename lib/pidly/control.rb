@@ -16,7 +16,7 @@ module Pidly
 
     attr_accessor :daemon, :name, :pid_path,
       :log_path, :path, :sync_log, :allow_multiple,
-      :verbose, :pid, :timeout, :error_count
+      :verbose, :pid, :timeout, :error_count, :messages
 
     #
     # Initialize Control Object
@@ -25,6 +25,8 @@ module Pidly
     def initialize(options={})
 
       @name = options[:name]
+      
+      @messages = []
 
       if options[:path]
         @path = Pathname.new(options[:path])
@@ -66,7 +68,7 @@ module Pidly
 
       @error_count = 0
 
-      verbosity = options[:verbose]
+      @verbosity = options[:verbose] || false
     end
 
     #
@@ -171,7 +173,7 @@ module Pidly
 
     rescue Errno::ENOENT
     end
-
+    
     def status
       if running?
         say :info, "#{@name} is running (PID #{@pid})"

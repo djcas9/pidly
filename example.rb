@@ -4,62 +4,46 @@ require 'pidly'
 require 'pp'
 
 class Test < Pidly::Control
+
+  before_start :test_before_daemon_starts
+
+  start :when_daemon_starts
+
+  stop :when_daemon_stops
+
+  after_stop :test_after_daemon_stops
   
-  include DaemonCommands
-  
-  before_start :test_pidly_on_start
-  
-  start :start!
-  
-  stop :clean!
-  
-  error :send_email
-  
-  after_stop :test_pidly_on_stop
-  
-  
-  def start!
-    
-    count = 0
-    
-    20.times do |i|
-      
-      puts "#{i}: #{Time.now} hello!"
-      
-      sleep 1
-      
-      if i == 4
-        raise('ERROR w0ots w0ots')
-      end
-      
-      exit if i == 15
-    end
-    
-  end
-  
-  def clean!
-    puts "#{@pid} done!"
-  end
-  
-  def test_pidly_on_start
+  error :on_daemon_error_send_email
+
+  def test_before_daemon_starts
     puts "BEFORE START #{@pid}"
   end
-  
-  def test_pidly_on_stop
+
+  def when_daemon_starts
+    loop do
+      puts Time.now
+      sleep 2
+    end
+  end
+
+  def when_daemon_stops
+    puts "Attempting to kill process: #{@pid}"
+  end
+
+  def test_after_daemon_stops
     puts "AFTER STOP #{@pid}"
   end
-  
+
   def send_email
     puts "SENDING EMAIL | Error Count: #{@error_count}"
   end
-  
+
 end
 
 @daemon = Test.spawn(
   :name => 'Test Daemon',
   :path => '/tmp',
-  :verbose => false
+  :verbose => true
 )
 
 @daemon.send ARGV.first
-
