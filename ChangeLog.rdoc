@@ -1,3 +1,9 @@
+=== 0.1.2 / 04/07/2011
+
+* Callbacks#add_callback should be private
+* added Pidly::Control#kill
+* Cleaned up daemon output
+
 === 0.1.1 / 04/07/2011
 
 * Bug fixes

@@ -58,7 +58,7 @@ module Pidly
       end
 
       if options.has_key?(:pid_file)
-        @pid_file = options.fetch(:pid_path)
+        @pid_file = options.fetch(:pid_file)
       else
         @pid_file = File.join(@path.to_s, 'pids', @name + '.pid')
       end
@@ -79,7 +79,7 @@ module Pidly
 
       @timeout = options.fetch(:timeout, 10)
 
-      @verbosity = options.fetch(:verbose, false)
+      @verbosity = options.fetch(:verbose, true)
 
       @logger = options.fetch(:logger, true)
     end
@@ -129,7 +129,7 @@ module Pidly
 
       unless @allow_multiple
         if running?
-          log(:error, "#{@name} is already running (PID #{@pid})")
+          log(:error, "\"#{@name}\" is already running (PID: #{@pid})")
           return
         end
       end
@@ -211,7 +211,7 @@ module Pidly
 
       else
         FileUtils.rm(@pid_file) if File.exists?(@pid_file)
-        log(:info, "PID file not found.")
+        log(:info, "\"#{@name}\" PID file not found.")
       end
 
     rescue Errno::ENOENT
@@ -226,9 +226,9 @@ module Pidly
     #
     def status
       if running?
-        log(:info, "#{@name} is running (PID #{@pid})")
+        log(:info, "\"#{@name}\" is running (PID: #{@pid})")
       else
-        log(:info, "#{@name} is NOT running")
+        log(:info, "\"#{@name}\" is NOT running")
       end
     end
 
@@ -248,7 +248,8 @@ module Pidly
     #
     def kill(remove_pid_file=true)
       if running?
-        log(:info, "Killing #{@name} (PID #{@pid})")
+        log(:info, "Killing \"#{@name}\" (PID: #{@pid})")
+        execute_callback(:kill)
         Process.kill 9, @pid
       end
 

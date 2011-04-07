@@ -93,6 +93,24 @@ module Pidly
     def error(callback=nil, &block)
       add_callback(:error, (callback || block))
     end
+    
+    #
+    # Kill
+    #
+    # Right before the kill instruction is sent the
+    # following callback will be invoked and executed.
+    #
+    # @param [Symbol] callback Method name
+    # @yield [] Code to be executed upon callback invocation
+    #
+    # @example
+    #   kill :sent_kill_9_to_process
+    #   # OR
+    #   kill { puts "Forcefully killed process" }
+    #
+    def kill(callback=nil, &block)
+      add_callback(:kill, (callback || block))
+    end
 
     #
     # Add callback
@@ -115,6 +133,8 @@ module Pidly
     def self.included(receiver)
       receiver.extend self
     end
+
+    private :add_callback
 
   end # modle Callbacks
 
