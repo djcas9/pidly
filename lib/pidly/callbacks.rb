@@ -102,7 +102,7 @@ module Pidly
     # @yield [] Code to be executed upon callback invocation
     # 
     def add_callback(callback, invoke)
-      Control.class_variable_set(:"@@#{callback}", invoke)
+      class_variable_set(:"@@#{callback}", invoke)
     end
 
     #
