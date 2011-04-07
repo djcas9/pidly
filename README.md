@@ -50,7 +50,7 @@ daemon without getting in the way with forced verbose output and usage messages.
 
 ## Install
 
-  $ gem install pidly
+	$ gem install pidly
 
 ## Copyright
 
