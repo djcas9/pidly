@@ -29,66 +29,6 @@ module Pidly
     #
     # @param [Hash] options The options to create a controller with.
     #
-    # @raise [RuntimeError]
-    #   Raise exception if path does not exist
-    #
-    # @raise [RuntimeError]
-    #   Raise exception if path is not readable or writable.
-    #
-    def initialize(options={})
-
-      @messages = []
-
-      @error_count = 0
-
-      @name = options.fetch(:name)
-
-      if options.has_key?(:path)
-        @path = Pathname.new(options.fetch(:path))
-      else
-        @path = Pathname.new('/tmp')
-      end
-
-      unless @path.directory?
-        raise('Path does not exist or is not a directory.')
-      end
-
-      unless @path.readable? && @path.writable?
-        raise('Path must be readable and writable.')
-      end
-
-      if options.has_key?(:pid_file)
-        @pid_file = options.fetch(:pid_file)
-      else
-        @pid_file = File.join(@path.to_s, 'pids', @name + '.pid')
-      end
-
-      if options.has_key?(:log_file)
-        @log_file = options.fetch(:log_path)
-      else
-        @log_file = File.join(@path.to_s, 'logs', @name + '.log')
-      end
-
-      @pid = fetch_pid if File.file?(@pid_file)
-
-      @sync_log = options.fetch(:sync_log, true)
-
-      @allow_multiple = options.fetch(:allow_multiple, false)
-
-      @signal = options.fetch(:signal, "TERM")
-
-      @timeout = options.fetch(:timeout, 10)
-
-      @verbosity = options.fetch(:verbose, true)
-
-      @logger = options.fetch(:logger, true)
-    end
-
-    #
-    # Spawn
-    #
-    # @param [Hash] options The options to create a controller with.
-    #
     # @option options [String] :name Daemon name
     #
     # @option options [String] :path Path to create the log/pids directory
@@ -114,6 +54,80 @@ module Pidly
     #
     # @return [Control] Control object
     #
+    # @raise [RuntimeError]
+    #   Raise exception if path does not exist
+    #
+    # @raise [RuntimeError]
+    #   Raise exception if path is not readable or writable.
+    #
+    def initialize(options={})
+
+      @messages = []
+
+      @error_count = 0
+
+      @name = options.fetch(:name)
+
+      @path = if options.has_key?(:path)
+        Pathname.new(options.fetch(:path))
+      else
+        Pathname.new('/tmp')
+      end
+
+      unless @path.directory?
+        raise('Path does not exist or is not a directory.')
+      end
+
+      unless @path.readable? && @path.writable?
+        raise('Path must be readable and writable.')
+      end
+
+      @pid_file = if options.has_key?(:pid_file)
+        Pathname.new(options.fetch(:pid_file))
+      else
+        Pathname.new(File.join(@path.to_s, 'pids', @name + '.pid'))
+      end
+
+      @log_file = if options.has_key?(:log_file)
+        Pathname.new(options.fetch(:log_file))
+      else
+        Pathname.new(File.join(@path.to_s, 'logs', @name + '.log'))
+      end
+
+      @pid = fetch_pid
+
+      @sync_log = options.fetch(:sync_log, true)
+
+      @allow_multiple = options.fetch(:allow_multiple, false)
+
+      @signal = options.fetch(:signal, "TERM")
+
+      @timeout = options.fetch(:timeout, 10)
+
+      @verbosity = options.fetch(:verbose, true)
+
+      @logger = options.fetch(:logger, true)
+
+      validate_callbacks!
+
+      validate_files_and_paths!
+    end
+
+    #
+    # Spawn
+    # 
+    # @param [Hash] options Control object options
+    #
+    # @return [Control] Control object
+    #
+    # @see initialize
+    # 
+    # @example
+    #   Test.spawn(
+    #     :path => '/tmp',
+    #     :verbose => true
+    #   )
+    # 
     def self.spawn(options={})
       @daemon = new(options)
     end
@@ -124,8 +138,6 @@ module Pidly
     # Validate callbacks and start daemon
     #
     def start
-      validate_files_and_paths!
-      validate_callbacks!
 
       unless @allow_multiple
         if running?
@@ -284,22 +296,50 @@ module Pidly
     rescue Errno::ENOENT
     end
 
-    def validate_files_and_paths!
-      log = Pathname.new(@log_file).dirname
-      pid = Pathname.new(@pid_file).dirname
+    #
+    # Fetch Class Variable
+    #
+    # @param [Symbol] name Callback name
+    #
+    # @return [Symbol, Proc, nil]
+    #   Returns either a method or block of code to be executed when
+    #   the callback is called. If no value is accossiated with the
+    #   call variable `nil` will be returned to the caller.
+    #
+    def fetch_class_var(name)
+      Control.instance_eval do
+        return nil unless class_variable_defined?(:"@@#{name}")
 
-      unless File.directory?(log)
-        FileUtils.mkdir_p(log.to_s)
+        class_variable_get(:"@@#{name}")
+      end
+    end
+
+    def validate_files_and_paths!
+      unless @log_file.directory?
+        FileUtils.mkdir_p(@log_file.dirname)
       end
 
-      unless File.directory?(pid)
-        FileUtils.mkdir_p(pid.to_s)
+      unless @pid_file.directory?
+        FileUtils.mkdir_p(@pid_file.dirname)
       end
     end
 
     def validate_callbacks!
-      unless Control.class_variable_defined?(:"@@start")
-        raise('You must define a "start" callback.')
+      parent = self
+      Control.instance_eval do
+
+        unless class_variable_defined?(:"@@start")
+          raise('You must define a "start" callback.')
+        end
+
+        class_variables.each do |cvar|
+          value = class_variable_get(:"#{cvar}")
+
+          next unless value.is_a?(Symbol)
+          next if parent.respond_to?(value)
+
+          raise("Undefined callback method: #{value}")
+        end
       end
     end
 
@@ -309,23 +349,14 @@ module Pidly
       if (callback = fetch_class_var(callback_name))
 
         if callback.kind_of?(Symbol)
-
-          unless self.respond_to?(callback.to_sym)
-            raise("Undefined callback method: #{callback}")
-          end
-
           self.send(callback.to_sym)
-
         elsif callback.respond_to?(:call)
-
           self.instance_eval(&callback)
-
         else
           nil
         end
 
       end
-
     end
 
     def fetch_pid
@@ -334,17 +365,8 @@ module Pidly
       nil
     end
 
-    def fetch_class_var(name)
-      if Control.class_variable_defined?(:"@@#{name}")
-        Control.instance_eval do
-          return class_variable_get(:"@@#{name}")
-        end
-      end
-    end
-
     private :validate_callbacks!, :fetch_pid,
-      :validate_files_and_paths!, :execute_callback,
-      :fetch_class_var
+      :validate_files_and_paths!, :execute_callback
 
   end # class Control
 

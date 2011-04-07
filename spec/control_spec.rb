@@ -20,12 +20,13 @@ describe Control do
 
   it "should have an active status, name and pid" do
     @daemon.status
-    reply = "#{@daemon.name} is running (PID #{@daemon.pid})"
+    reply = "\"#{@daemon.name}\" is running (PID: #{@daemon.pid})"
+    
     @daemon.messages.last.should == reply
   end
 
   it "should have the correct pid path" do
-    @daemon.pid_file.should == "/tmp/pids/#{@daemon.name}.pid"
+    @daemon.pid_file.to_s.should == "/tmp/pids/#{@daemon.name}.pid"
   end
 
   it "should have a pid file that exists" do
@@ -33,7 +34,7 @@ describe Control do
   end
 
   it "should have the correct log file" do
-    @daemon.log_file.should == "/tmp/logs/#{@daemon.name}.log"
+    @daemon.log_file.to_s.should == "/tmp/logs/#{@daemon.name}.log"
   end
 
   it "should have a log file that exists" do
@@ -42,7 +43,7 @@ describe Control do
 
   it "should fail when trying to start another daemon" do
     @daemon.start
-    reply = "#{@daemon.name} is already running (PID #{@daemon.pid})"
+    reply = "\"#{@daemon.name}\" is already running (PID: #{@daemon.pid})"
 
     @daemon.messages.last.should == reply
   end
@@ -55,6 +56,30 @@ describe Control do
   it "should write to the pid file" do
     file = File.open(@daemon.pid_file, 'r')
     file.read.should =~ /#{@daemon.pid}/
+  end
+  
+  it "should not have a start callback defined" do
+    test_callback(:start, true).should == true
+  end
+  
+  it "should not have a stop callback defined" do
+    test_callback(:stop).should == "Attempting to kill process: "
+  end
+  
+  it "should not have a before_start callback defined" do
+    test_callback(:before_start).should == "BEFORE START "
+  end
+  
+  it "should not have a after_stop callback defined" do
+    test_callback(:after_stop).should == :test_after_daemon_stops
+  end
+  
+  it "should have an error callback defined" do
+    test_callback(:error).should == "SENDING EMAIL | Error Count: "
+  end
+  
+  it "should not have a kill callback defined" do
+    test_callback(:kill).should == nil
   end
 
   after(:all) do
