@@ -10,34 +10,34 @@ daemon without getting in the way with forced verbose output and usage messages.
 
 ## Examples
 
-    require 'pidly'
+	require 'pidly'
 
-		class Test < Pidly::Control
+	class Test < Pidly::Control
 
-		  before_start do
-		    "BEFORE START #{@pid}"
-		  end
+	  before_start do
+	    "BEFORE START #{@pid}"
+	  end
 
-		  start :when_daemon_starts
+	  start :when_daemon_starts
 
-		  stop do
-		    "Attempting to kill process: #{@pid}"
-		  end
+	  stop do
+	    "Attempting to kill process: #{@pid}"
+	  end
 
-		  after_stop :test_after_daemon_stops
+	  after_stop :test_after_daemon_stops
 
-		  error do
-		    "SENDING EMAIL | Error Count: #{@error_count}"
-		  end
+	  error do
+	    "SENDING EMAIL | Error Count: #{@error_count}"
+	  end
 
-		  def when_daemon_starts
-		    loop do
-		      print "TEST FROM #{@pid}"
-		      sleep 2
-		    end
-		  end
+	  def when_daemon_starts
+	    loop do
+	      print "TEST FROM #{@pid}"
+	      sleep 2
+	    end
+	  end
 
-		end
+	end
 
 	@daemon = Test.spawn(
 	  :name => 'Test Daemon',
