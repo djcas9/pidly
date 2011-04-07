@@ -1,7 +1,7 @@
 # pidly
 
 * [Homepage](https://github.com/mephux/pidly)
-* [Documentation](http://rubydoc.info/gems/pidly/frames)
+* [Documentation](http://rubydoc.info/github/mephux/pidly/master/frames)
 
 ## Description
 
