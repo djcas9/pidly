@@ -1,19 +1,19 @@
 module Pidly
   #
   # Pidly before/after callbacks
-  # 
+  #
   module Callbacks
-    
+
     #
     # Before start
-    # 
-    # Right before the daemon is instructed to start the 
+    #
+    # Right before the daemon is instructed to start the
     # following callback will be invoked and executed.
-    # 
+    #
     # @param [Symbol] callback Method name
     # @yield [] Code to be executed upon callback invocation
     #
-    # @example 
+    # @example
     #   before_start :method_name
     #   # OR
     #   before_start { puts "#{@pid} is about to start!" }
@@ -21,53 +21,53 @@ module Pidly
     def before_start(callback=nil, &block)
       add_callback(:before_start, (callback || block))
     end
-    
+
     #
     # Start
-    # 
-    # When the daemon is instructed to start the 
+    #
+    # When the daemon is instructed to start the
     # following callback will be invoked and executed.
-    # 
+    #
     # @param [Symbol] callback Method name
     # @yield [] Code to be executed upon callback invocation
     #
-    # @example 
+    # @example
     #   start :method_name
     #   # OR
     #   start { puts "Daemon Started!" }
-    # 
+    #
     def start(callback=nil, &block)
       add_callback(:start, (callback || block))
     end
-    
+
     #
     # Stop
-    # 
-    # When the daemon is instructed to stop the 
+    #
+    # When the daemon is instructed to stop the
     # following callback will be invoked and executed.
-    # 
+    #
     # @param [Symbol] callback Method name
     # @yield [] Code to be executed upon callback invocation
-    # 
-    # @example 
+    #
+    # @example
     #   stop :method_name
     #   # OR
     #   stop { puts "Attempting to stop #{@name} with pid #{@pid}!" }
-    # 
+    #
     def stop(callback=nil, &block)
       add_callback(:stop, (callback || block))
     end
-    
+
     #
     # After stop
-    # 
-    # Right after the daemon is instructed to stop the 
+    #
+    # Right after the daemon is instructed to stop the
     # following callback will be invoked and executed.
-    # 
+    #
     # @param [Symbol] callback Method name
     # @yield [] Code to be executed upon callback invocation
     #
-    # @example 
+    # @example
     #   after_start :method_name
     #   # OR
     #   after_start { puts "#{@pid} was just killed!" }
@@ -75,17 +75,17 @@ module Pidly
     def after_stop(callback=nil, &block)
       add_callback(:after_stop, (callback || block))
     end
-    
+
     #
     # Error
-    # 
+    #
     # If the daemon encounters an error or an exception is raised
     # the following callback will be invoked and executed.
-    # 
+    #
     # @param [Symbol] callback Method name
     # @yield [] Code to be executed upon callback invocation
     #
-    # @example 
+    # @example
     #   error :send_error_email
     #   # OR
     #   error { puts "ZOMG! #{@name} failed!" }
@@ -96,24 +96,26 @@ module Pidly
 
     #
     # Add callback
-    # 
+    #
     # @param [Symbol] callback Callback method name
     # @param [Symbol, nil] invoke Method to call
     # @yield [] Code to be executed upon callback invocation
-    # 
+    #
     def add_callback(callback, invoke)
-      class_variable_set(:"@@#{callback}", invoke)
+      Control.instance_eval do
+        class_variable_set(:"@@#{callback}", invoke)
+      end
     end
 
     #
     # Extend and include callback methods
-    # 
+    #
     # @param [Class] receiver The calling class
-    # 
+    #
     def self.included(receiver)
       receiver.extend self
     end
 
   end # modle Callbacks
-  
+
 end # module Pidly
