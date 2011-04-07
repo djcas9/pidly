@@ -111,7 +111,6 @@ module Pidly
     # @param [Class] receiver The calling class
     # 
     def self.included(receiver)
-      puts receiver.class
       receiver.extend self
     end
 
