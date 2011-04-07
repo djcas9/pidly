@@ -294,9 +294,8 @@ module Pidly
     def execute_callback(callback_name)
       @error_count += 1 if callback_name == :error
 
-      if Control.class_variable_defined?(:"@@#{callback_name}")
-        callback = Control.class_variable_get(:"@@#{callback_name}")
-
+      if (callback = fetch_class_var(callback_name))
+        
         if callback.kind_of?(Symbol)
 
           unless self.respond_to?(callback.to_sym)
@@ -312,7 +311,7 @@ module Pidly
         else
           nil
         end
-
+        
       end
 
     end
@@ -322,9 +321,18 @@ module Pidly
     rescue
       nil
     end
+    
+    def fetch_class_var(name)
+      if Control.class_variable_defined?(:"@@#{name}")
+        Control.instance_eval do
+          return class_variable_get(:"@@#{name}")
+        end
+      end
+    end
 
     private :validate_callbacks!, :fetch_pid,
-      :validate_files_and_paths!, :execute_callback
+      :validate_files_and_paths!, :execute_callback,
+      :fetch_class_var
 
   end # class Control
 
