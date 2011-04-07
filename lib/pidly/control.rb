@@ -4,15 +4,20 @@ require 'pathname'
 require 'pidly/callbacks'
 require 'pidly/logger'
 
+#
+# Pidly namespace
+#
 module Pidly
 
   #
-  # Pidly Master Control
+  # Pidly daemon control
   #
   class Control
 
     # Include callbacks
     include Pidly::Callbacks
+    
+    # Include logging helpers
     include Pidly::Logger
 
     attr_accessor :daemon, :name, :pid_file,
@@ -20,9 +25,16 @@ module Pidly
       :verbose, :pid, :timeout, :error_count, :messages
 
     #
-    # Initialize Control Object
+    # Initialize control object
     #
-    #
+    # @param [Hash] options The options to create a controller with.
+    # 
+    # @raise [RuntimeError] 
+    #   Raise exception if path does not exist
+    # 
+    # @raise [RuntimeError] 
+    #   Raise exception if path is not readable or writable.
+    # 
     def initialize(options={})
 
       @messages = []
@@ -68,28 +80,56 @@ module Pidly
       @timeout = options.fetch(:timeout, 10)
 
       @verbosity = options.fetch(:verbose, false)
+
+      @logger = options.fetch(:logger, true)
     end
 
     #
     # Spawn
     #
-    # @param [Hash] options
-    #   Configuration options for control object
+    # @param [Hash] options The options to create a controller with.
+    # 
+    # @option options [String] :name Daemon name
+    # 
+    # @option options [String] :path Path to create the log/pids directory
+    # 
+    # @option options [String] :pid_file Pid file path
+    # 
+    # @option options [String] :log_file Log file path
+    # 
+    # @option options [true, false] :sync_log Synchronize log files
+    # 
+    # @option options [true, false] :allow_multiple 
+    #   Allow multiple daemons of the same type
+    # 
+    # @option options [true, false] :sync_log Synchronize log files
+    # 
+    # @option options [String] :signal Trap signal
+    # 
+    # @option options [Integer] :timeout Timeout for Process#wait
+    # 
+    # @option options [true, false] :verbose Display daemon messages
+    # 
+    # @option options [true, false] :logger Enable daemon logging
     #
     # @return [Control] Control object
     #
     def self.spawn(options={})
       @daemon = new(options)
     end
-
+    
+    #
+    # Start
+    # 
+    # Validate callbacks and start daemon
+    # 
     def start
       validate_files_and_paths!
       validate_callbacks!
 
       unless @allow_multiple
         if running?
-          say :error, "An instance of #{@name} is already " +
-            "running (PID #{@pid})"
+          log(:error, "#{@name} is already running (PID #{@pid})")
           return
         end
       end
@@ -108,13 +148,15 @@ module Pidly
           Dir.chdir @path.to_s
           File.umask 0000
 
-          log = File.new(@log_file, "a")
-          log.sync = @sync_log
+          if @logger
+            log = File.new(@log_file, "a")
+            log.sync = @sync_log
 
-          STDIN.reopen "/dev/null"
-          STDOUT.reopen log
-          STDERR.reopen STDOUT
-
+            STDIN.reopen "/dev/null"
+            STDOUT.reopen log
+            STDERR.reopen STDOUT
+          end
+          
           trap("TERM") do
             stop
           end
@@ -139,7 +181,12 @@ module Pidly
       STDERR.puts message.backtrace
       execute_callback(:error)
     end
-
+    
+    #
+    # Stop
+    # 
+    # Stop daemon and remove pid file
+    # 
     def stop
 
       if running?
@@ -164,34 +211,56 @@ module Pidly
 
       else
         FileUtils.rm(@pid_file) if File.exists?(@pid_file)
-        say :info, "PID file not found. Is the daemon started?"
+        log(:info, "PID file not found. Is the daemon started?")
       end
 
     rescue Errno::ENOENT
     end
-
+    
+    #
+    # Status
+    # 
+    # Return current daemon status and pid
+    # 
+    # @return [String] Status
+    # 
     def status
       if running?
-        say :info, "#{@name} is running (PID #{@pid})"
+        log(:info, "#{@name} is running (PID #{@pid})")
       else
-        say :info, "#{@name} is NOT running"
+        log(:info, "#{@name} is NOT running")
       end
     end
-
+    
+    #
+    # Restart
+    # 
+    # Restart the daemon
+    # 
     def restart
       stop; sleep 1 while running?; start
     end
-
+    
+    #
+    # Kill
+    # 
+    # @param [String] remove_pid_file Remove the daemon pid file
+    # 
     def kill(remove_pid_file=true)
       if running?
-        say :info, "Killing #{@name} (PID #{@pid})"
+        log(:info, "Killing #{@name} (PID #{@pid})")
         Process.kill 9, @pid
       end
 
       FileUtils.rm(@pid_file) if remove_pid_file
     rescue Errno::ENOENT
     end
-
+    
+    #
+    # Running?
+    # 
+    # @return [true, false] Return the running status of the daemon.
+    # 
     def running?
       Process.kill 0, @pid
       true
@@ -202,7 +271,7 @@ module Pidly
     rescue
       false
     end
-
+    
     def validate_files_and_paths!
       log = Pathname.new(@log_file).dirname
       pid = Pathname.new(@pid_file).dirname
@@ -245,7 +314,7 @@ module Pidly
         end
 
       end
-      
+
     end
 
     def fetch_pid

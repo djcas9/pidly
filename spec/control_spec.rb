@@ -42,8 +42,7 @@ describe Control do
   
   it "should fail when trying to start another daemon" do
     @daemon.start
-    reply = "An instance of #{@daemon.name} is already " +
-    "running (PID #{@daemon.pid})"
+    reply = "#{@daemon.name} is already running (PID #{@daemon.pid})"
     
     @daemon.messages.last.should == reply
   end

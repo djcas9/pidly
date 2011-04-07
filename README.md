@@ -1,7 +1,7 @@
 # pidly
 
-* {Homepage}[http://rubygems.org/gems/pidly]
-* {Documentation}[http://rubydoc.info/gems/pidly/frames]
+* [Homepage][https://github.com/mephux/pidly]
+* [Documentation][http://rubydoc.info/gems/pidly/frames]
 
 ## Description
 
@@ -12,42 +12,32 @@ daemon without getting in the way with forced verbose output and usage messages.
 
     require 'pidly'
 
-    class Test < Pidly::Control
+		class Test < Pidly::Control
 
-		  before_start :test_before_daemon_starts
+		  before_start do
+		    "BEFORE START #{@pid}"
+		  end
 
 		  start :when_daemon_starts
 
-		  stop :when_daemon_stops
+		  stop do
+		    "Attempting to kill process: #{@pid}"
+		  end
 
 		  after_stop :test_after_daemon_stops
 
-		  error :on_daemon_error_send_email
-
-		  def test_before_daemon_starts
-		    puts "BEFORE START #{@pid}"
+		  error do
+		    "SENDING EMAIL | Error Count: #{@error_count}"
 		  end
 
 		  def when_daemon_starts
 		    loop do
-		      puts Time.now
+		      print "TEST FROM #{@pid}"
 		      sleep 2
 		    end
 		  end
 
-		  def when_daemon_stops
-		    puts "Attempting to kill process: #{@pid}"
-		  end
-
-		  def test_after_daemon_stops
-		    puts "AFTER STOP #{@pid}"
-		  end
-
-		  def send_email
-		    puts "SENDING EMAIL | Error Count: #{@error_count}"
-		  end
-
-	end
+		end
 
 	@daemon = Test.spawn(
 	  :name => 'Test Daemon',
