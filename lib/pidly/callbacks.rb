@@ -4,24 +4,24 @@ module Pidly
   # 
   module Callbacks
 
-    def before_start(*callbacks)
-      add_callback(:before_start, callbacks)
+    def before_start(callback=nil, &block)
+      add_callback(:before_start, (callback || block))
     end
     
-    def start(*callbacks)
-      add_callback(:start, callbacks)
+    def start(callback=nil, &block)
+      add_callback(:start, (callback || block))
     end
     
-    def stop(*callbacks)
-      add_callback(:stop, callbacks)
+    def stop(callback=nil, &block)
+      add_callback(:stop, (callback || block))
     end
     
-    def after_stop(*callbacks)
-      add_callback(:after_stop, callbacks)
+    def after_stop(callback=nil, &block)
+      add_callback(:after_stop, (callback || block))
     end
     
-    def error(*callbacks)
-      add_callback(:error, callbacks)
+    def error(callback=nil, &block)
+      add_callback(:error, (callback || block))
     end
 
     def add_callback(callback, methods)

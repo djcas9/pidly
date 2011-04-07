@@ -5,7 +5,7 @@ require 'pidly/callbacks'
 require 'pidly/logger'
 
 module Pidly
-  
+
   #
   # Pidly Master Control
   #
@@ -15,19 +15,21 @@ module Pidly
     include Pidly::Callbacks
     include Pidly::Logger
 
-    attr_accessor :daemon, :name, :pid_path,
-      :log_path, :path, :sync_log, :allow_multiple,
+    attr_accessor :daemon, :name, :pid_file,
+      :log_file, :path, :sync_log, :allow_multiple,
       :verbose, :pid, :timeout, :error_count, :messages
-      
+
     #
     # Initialize Control Object
     #
     #
     def initialize(options={})
 
-      @name = options[:name]
-
       @messages = []
+
+      @error_count = 0
+
+      @name = options.fetch(:name)
 
       if options.has_key?(:path)
         @path = Pathname.new(options.fetch(:path))
@@ -55,9 +57,7 @@ module Pidly
         @log_file = File.join(@path.to_s, 'logs', @name + '.log')
       end
 
-      if File.file?(@pid_file)
-        @pid = fetch_pid
-      end
+      @pid = fetch_pid if File.file?(@pid_file)
 
       @sync_log = options.fetch(:sync_log, true)
 
@@ -66,8 +66,6 @@ module Pidly
       @signal = options.fetch(:signal, "TERM")
 
       @timeout = options.fetch(:timeout, 10)
-
-      @error_count = 0
 
       @verbosity = options.fetch(:verbose, false)
     end
@@ -92,10 +90,10 @@ module Pidly
         if running?
           say :error, "An instance of #{@name} is already " +
             "running (PID #{@pid})"
-          exit 1
+          return
         end
       end
-      
+
       @pid = fork do
         begin
           Process.setsid
@@ -105,7 +103,7 @@ module Pidly
             @pid = Process.pid
           end
 
-          execute_callbacks(:before_start)
+          execute_callback(:before_start)
 
           Dir.chdir @path.to_s
           File.umask 0000
@@ -121,25 +119,25 @@ module Pidly
             stop
           end
 
-          execute_callbacks(:start)
+          execute_callback(:start)
 
         rescue RuntimeError => message
           STDERR.puts message
           STDERR.puts message.backtrace
 
-          execute_callbacks(:error)
+          execute_callback(:error)
         rescue => message
           STDERR.puts message
           STDERR.puts message.backtrace
 
-          execute_callbacks(:error)
+          execute_callback(:error)
         end
       end
 
     rescue => message
       STDERR.puts message
       STDERR.puts message.backtrace
-      execute_callbacks(:error)
+      execute_callback(:error)
     end
 
     def stop
@@ -148,9 +146,9 @@ module Pidly
 
         Process.kill(@signal, @pid)
         FileUtils.rm(@pid_file)
-        
-        execute_callbacks(:stop)
-        
+
+        execute_callback(:stop)
+
         begin
           Process.wait(@pid)
         rescue Errno::ECHILD
@@ -162,7 +160,7 @@ module Pidly
         end
 
         Process.kill 9, @pid if running?
-        execute_callbacks(:after_stop)
+        execute_callback(:after_stop)
 
       else
         FileUtils.rm(@pid_file) if File.exists?(@pid_file)
@@ -184,13 +182,13 @@ module Pidly
       stop; sleep 1 while running?; start
     end
 
-    def kill
+    def kill(remove_pid_file=true)
       if running?
         say :info, "Killing #{@name} (PID #{@pid})"
         Process.kill 9, @pid
       end
-      
-      FileUtils.rm(@pid_file)
+
+      FileUtils.rm(@pid_file) if remove_pid_file
     rescue Errno::ENOENT
     end
 
@@ -224,21 +222,30 @@ module Pidly
       end
     end
 
-    def execute_callbacks(callback_name)
+    def execute_callback(callback_name)
       @error_count += 1 if callback_name == :error
 
       if Control.class_variable_defined?(:"@@#{callback_name}")
         callback = Control.class_variable_get(:"@@#{callback_name}")
 
-        callback.each do |method_name|
-          unless self.respond_to?(method_name.to_sym)
-            raise("Undefined callback method: #{method_name}")
+        if callback.kind_of?(Symbol)
+
+          unless self.respond_to?(callback.to_sym)
+            raise("Undefined callback method: #{callback}")
           end
 
-          self.send(method_name.to_sym)
-        end
-      end
+          self.send(callback.to_sym)
 
+        elsif callback.respond_to?(:call)
+
+          self.instance_eval(&callback)
+
+        else
+          nil
+        end
+
+      end
+      
     end
 
     def fetch_pid
@@ -247,8 +254,8 @@ module Pidly
       nil
     end
 
-    private :execute_callbacks, :validate_callbacks!,
-      :fetch_pid, :validate_files_and_paths!
+    private :validate_callbacks!, :fetch_pid,
+      :validate_files_and_paths!, :execute_callback
 
   end # class Control
 

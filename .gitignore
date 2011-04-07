@@ -10,3 +10,4 @@ doc
 .yardoc
 .bundle/
 .document
+example.rb

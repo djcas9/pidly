@@ -7,37 +7,27 @@ include Pidly
 
 class Test < Pidly::Control
 
-  before_start :test_before_daemon_starts
+  before_start do
+    "BEFORE START #{@pid}"
+  end
 
   start :when_daemon_starts
 
-  stop :when_daemon_stops
+  stop do
+    "Attempting to kill process: #{@pid}"
+  end
 
   after_stop :test_after_daemon_stops
   
-  error :on_daemon_error_send_email
-
-  def test_before_daemon_starts
-    "BEFORE START #{@pid}"
+  error do
+    "SENDING EMAIL | Error Count: #{@error_count}"
   end
 
   def when_daemon_starts
     loop do
-      puts "#{Time.now} TEST FROM #{@pid}"
+      print "TEST FROM #{@pid}"
       sleep 2
     end
-  end
-
-  def when_daemon_stops
-    "Attempting to kill process: #{@pid}"
-  end
-
-  def test_after_daemon_stops
-    "AFTER STOP #{@pid}"
-  end
-
-  def send_email
-    "SENDING EMAIL | Error Count: #{@error_count}"
   end
 
 end
