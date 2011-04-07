@@ -16,7 +16,7 @@ module Pidly
 
     # Include callbacks
     include Pidly::Callbacks
-    
+
     # Include logging helpers
     include Pidly::Logger
 
@@ -28,13 +28,13 @@ module Pidly
     # Initialize control object
     #
     # @param [Hash] options The options to create a controller with.
-    # 
-    # @raise [RuntimeError] 
+    #
+    # @raise [RuntimeError]
     #   Raise exception if path does not exist
-    # 
-    # @raise [RuntimeError] 
+    #
+    # @raise [RuntimeError]
     #   Raise exception if path is not readable or writable.
-    # 
+    #
     def initialize(options={})
 
       @messages = []
@@ -88,28 +88,28 @@ module Pidly
     # Spawn
     #
     # @param [Hash] options The options to create a controller with.
-    # 
+    #
     # @option options [String] :name Daemon name
-    # 
+    #
     # @option options [String] :path Path to create the log/pids directory
-    # 
+    #
     # @option options [String] :pid_file Pid file path
-    # 
+    #
     # @option options [String] :log_file Log file path
-    # 
+    #
     # @option options [true, false] :sync_log Synchronize log files
-    # 
-    # @option options [true, false] :allow_multiple 
+    #
+    # @option options [true, false] :allow_multiple
     #   Allow multiple daemons of the same type
-    # 
+    #
     # @option options [true, false] :sync_log Synchronize log files
-    # 
+    #
     # @option options [String] :signal Trap signal
-    # 
+    #
     # @option options [Integer] :timeout Timeout for Process#wait
-    # 
+    #
     # @option options [true, false] :verbose Display daemon messages
-    # 
+    #
     # @option options [true, false] :logger Enable daemon logging
     #
     # @return [Control] Control object
@@ -117,12 +117,12 @@ module Pidly
     def self.spawn(options={})
       @daemon = new(options)
     end
-    
+
     #
     # Start
-    # 
+    #
     # Validate callbacks and start daemon
-    # 
+    #
     def start
       validate_files_and_paths!
       validate_callbacks!
@@ -156,7 +156,7 @@ module Pidly
             STDOUT.reopen log
             STDERR.reopen STDOUT
           end
-          
+
           trap("TERM") do
             stop
           end
@@ -181,12 +181,12 @@ module Pidly
       STDERR.puts message.backtrace
       execute_callback(:error)
     end
-    
+
     #
     # Stop
-    # 
+    #
     # Stop daemon and remove pid file
-    # 
+    #
     def stop
 
       if running?
@@ -211,19 +211,19 @@ module Pidly
 
       else
         FileUtils.rm(@pid_file) if File.exists?(@pid_file)
-        log(:info, "PID file not found. Is the daemon started?")
+        log(:info, "PID file not found.")
       end
 
     rescue Errno::ENOENT
     end
-    
+
     #
     # Status
-    # 
+    #
     # Return current daemon status and pid
-    # 
+    #
     # @return [String] Status
-    # 
+    #
     def status
       if running?
         log(:info, "#{@name} is running (PID #{@pid})")
@@ -231,21 +231,21 @@ module Pidly
         log(:info, "#{@name} is NOT running")
       end
     end
-    
+
     #
     # Restart
-    # 
+    #
     # Restart the daemon
-    # 
+    #
     def restart
       stop; sleep 1 while running?; start
     end
-    
+
     #
     # Kill
-    # 
+    #
     # @param [String] remove_pid_file Remove the daemon pid file
-    # 
+    #
     def kill(remove_pid_file=true)
       if running?
         log(:info, "Killing #{@name} (PID #{@pid})")
@@ -255,12 +255,12 @@ module Pidly
       FileUtils.rm(@pid_file) if remove_pid_file
     rescue Errno::ENOENT
     end
-    
+
     #
     # Running?
-    # 
+    #
     # @return [true, false] Return the running status of the daemon.
-    # 
+    #
     def running?
       Process.kill 0, @pid
       true
@@ -271,7 +271,18 @@ module Pidly
     rescue
       false
     end
-    
+
+    #
+    # Clean
+    #
+    # Remove all files created by the daemon.
+    #
+    def clean!
+      FileUtils.rm(@log_file)
+      FileUtils.rm(@pid_file)
+    rescue Errno::ENOENT
+    end
+
     def validate_files_and_paths!
       log = Pathname.new(@log_file).dirname
       pid = Pathname.new(@pid_file).dirname
@@ -295,7 +306,7 @@ module Pidly
       @error_count += 1 if callback_name == :error
 
       if (callback = fetch_class_var(callback_name))
-        
+
         if callback.kind_of?(Symbol)
 
           unless self.respond_to?(callback.to_sym)
@@ -311,7 +322,7 @@ module Pidly
         else
           nil
         end
-        
+
       end
 
     end
@@ -321,7 +332,7 @@ module Pidly
     rescue
       nil
     end
-    
+
     def fetch_class_var(name)
       if Control.class_variable_defined?(:"@@#{name}")
         Control.instance_eval do

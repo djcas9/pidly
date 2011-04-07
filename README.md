@@ -15,19 +15,19 @@ daemon without getting in the way with forced verbose output and usage messages.
 	class Test < Pidly::Control
 
 	  before_start do
-	    "BEFORE START #{@pid}"
+	    puts "BEFORE START #{@pid}"
 	  end
 
 	  start :when_daemon_starts
 
 	  stop do
-	    "Attempting to kill process: #{@pid}"
+	    puts "Attempting to kill process: #{@pid}"
 	  end
 
 	  after_stop :test_after_daemon_stops
 
 	  error do
-	    "SENDING EMAIL | Error Count: #{@error_count}"
+	    puts "SENDING EMAIL | Error Count: #{@error_count}"
 	  end
 
 	  def when_daemon_starts
@@ -46,7 +46,7 @@ daemon without getting in the way with forced verbose output and usage messages.
 	)
 
 	# @daemon.send ARGV.first
-	@daemon.start # stop, status, restart, and kill.
+	@daemon.start # stop, status, restart, clean!, and kill.
 
 ## Install
 
