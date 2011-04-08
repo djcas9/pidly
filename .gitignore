@@ -11,3 +11,4 @@ doc
 .bundle/
 .document
 example.rb
+*.rbx
