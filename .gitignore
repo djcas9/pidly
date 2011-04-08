@@ -11,4 +11,5 @@ doc
 .bundle/
 .document
 example.rb
+*.rbc
 *.rbx
