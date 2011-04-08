@@ -58,19 +58,19 @@ describe Control do
     file.read.should =~ /#{@daemon.pid}/
   end
   
-  it "should not have a start callback defined" do
+  it "should have a start callback defined" do
     test_callback(:start, true).should == true
   end
   
-  it "should not have a stop callback defined" do
+  it "should have a stop callback defined" do
     test_callback(:stop).should == "Attempting to kill process: "
   end
   
-  it "should not have a before_start callback defined" do
+  it "should have a before_start callback defined" do
     test_callback(:before_start).should == "BEFORE START "
   end
   
-  it "should not have a after_stop callback defined" do
+  it "should have a after_stop callback defined" do
     test_callback(:after_stop).should == :test_after_daemon_stops
   end
   
